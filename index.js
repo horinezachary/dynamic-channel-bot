@@ -21,7 +21,14 @@ client.on('message', async message => {
         console.log(c);
         var taggedChannel = message.guild.channels.cache.get(c);
         if (taggedChannel.type == "voice") {
-          registerChannel(taggedChannel,message.channel);
+          let status = await dbCon.registerChannel(taggedChannel);
+          if (status == true) { //success
+            embed("Register","FF6600","The channel you requested was successfully registered.\n"
+                 +"```" + taggedChannel.name + " | " + taggedChannel.id + ":" + taggedChannel.guild + "```",message.channel);
+          } else{ //failure
+            embed("Register","FF6600","The channel you requested was already registered."
+                 +"```" + taggedChannel.name + " | " + taggedChannel.id + ":" + taggedChannel.guild + "```",message.channel);
+          }
         } else {
           embed("Register","FF6600","The requested channel (" + taggedChannel.name + ":" + taggedChannel.id + ") is not a voice channel.",taggedChannel);
         }
@@ -37,7 +44,14 @@ client.on('message', async message => {
         console.log(c);
         var taggedChannel = message.guild.channels.cache.get(c);
         if (taggedChannel.type == "voice") {
-          unregisterChannel(taggedChannel,message.channel);
+          let status = await dbCon.unregisterChannel(taggedChannel);
+          if (status == true) { //success
+            embed("Unregister","FF6600","The channel you requested was successfully unregistered.\n"
+                 +"```" + taggedChannel.name + " | " + taggedChannel.id + ":" + taggedChannel.guild + "```",message.channel);
+          } else{ //failure
+            embed("Unregister","FF6600","The channel you requested was not registered."
+                 +"```" + taggedChannel.name + " | " + taggedChannel.id + ":" + taggedChannel.guild + "```",message.channel);
+          }
         } else {
           embed("Unregister","FF6600","The requested channel (" + taggedChannel.name + ":" + taggedChannel.id + ") is not a voice channel.",taggedChannel);
         }
@@ -47,7 +61,7 @@ client.on('message', async message => {
     }
   }
   if (message.content.startsWith("z$list")) {
-    var registered = await getRegistered();
+    var registered = await dbCon.getRegistered(message.channel.guild);
     var description = "```    NAME   |     CHANNEL       |      GUILD         \n";
         description +=   "----------------------------------------------------\n";
     for (r of registered) {
@@ -68,7 +82,7 @@ client.on('voiceStateUpdate', async (oldState,newState) => {
   if (newState.channelID == null) {
     //user left the channel
     console.log("user " + oldState.id + " left channel " + oldState.channelID);
-    if (isRegistered(client.channels.cache.get(oldState.channelID))) {
+    if (dbCon.isRegistered(client.channels.cache.get(oldState.channelID))) {
       let oldS = oldState;
       delete oldS.guild;
       console.log(oldS);
@@ -76,7 +90,7 @@ client.on('voiceStateUpdate', async (oldState,newState) => {
   } else if (oldState.channelID == null) {
     //user joined the channel
     console.log("user " + newState.id + " joined channel " + newState.channelID);
-    if (isRegistered(client.channels.cache.get(newState.channelID))) {
+    if (dbCon.isRegistered(client.channels.cache.get(newState.channelID))) {
       let newS = newState;
       delete newS.guild;
       console.log(newS);
@@ -99,35 +113,6 @@ function hasPermission(channel, author) {
   return false;
 }
 
-async function registerChannel (channel, requestChannel) {
-  if (await isRegistered(channel) == false) {
-    console.log("CHANNEL: " + channel);
-    await dbCon.run(`INSERT INTO channels(channelId) VALUES(${channel.id})`);
-    // get the last insert id
-    console.log(`The channel ${channel.id} has been added to the table.`);
-    embed("Register","FF6600","The channel you requested was successfully registered.\n"
-         +"```" + channel.name + " | " + channel.id + ":" + channel.guild + "```",requestChannel);
-  } else {
-    //already registered
-    embed("Register","FF6600","The channel you requested was already registered."
-         +"```" + channel.name + " | " + channel.id + ":" + channel.guild + "```",requestChannel);
-  }
-}
-
-async function unregisterChannel (channel,requestChannel) {
-  if (await isRegistered(channel) == true) {
-    await dbCon.run(`DELETE FROM channels WHERE channelId = ${channel.id}`);
-    // get the last insert id
-    console.log(`The channel ${channel.id} has been removed from the table.`);
-    embed("Unegister","FF6600","The channel you requested was successfully unregistered.\n"
-         +"```" + channel.name + " | " + channel.id + ":" + channel.guild + "```",requestChannel);
-  } else {
-    //already unregistered
-    embed("Unregister","FF6600","The channel you requested was not registered."
-         +"```" + channel.name + " | " + channel.id + ":" + channel.guild + "```",requestChannel);
-  }
-}
-
 async function getRichPresence(userID,channelID) {
   let channel = client.channels.cache.get(channelID);
   let member = channel.guild.members.cache.get(userID);
@@ -136,30 +121,6 @@ async function getRichPresence(userID,channelID) {
   let activities = user.presence.activities;
   console.log(presence);
   console.log(activities);
-}
-
-async function getRegistered() {
-  let returnedChannels = [];
-  let rows = await dbCon.query(`SELECT channelId as id FROM channels`);
-  //console.log(rows);
-  for (row of rows) {
-    var channel = client.channels.cache.get(row.id);
-    var channelRow = {"id":row.id, "guild":channel.guild.id, "name":channel.name};
-    var len = returnedChannels.push(channelRow);
-    //console.log(channelRow);
-  }
-  return returnedChannels;
-}
-
-async function isRegistered(channel) {
-  let registered = await getRegistered();
-  console.log(registered);
-  for (r of registered) {
-    if (r.id == channel.id) {
-      return true;
-    }
-  }
-  return false;
 }
 
 function embed(title,color,description,channel) {
