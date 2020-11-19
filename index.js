@@ -76,11 +76,15 @@ client.on('voiceStateUpdate', async (oldState,newState) => {
   } else if (oldState.channelID == null) {
     //user joined the channel
     console.log("user " + newState.id + " joined channel " + newState.channelID);
-    if (isRegistered(newState.channel)) {
+    if (isRegistered(client.channels.cache.get(newState.channelID))) {
       let newS = newState;
       delete newS.guild;
       console.log(newS);
+      //check for rich presence
+      let rp = getRichPresence(newState.id,newState.channelID);
     }
+  } else {
+    //different change
   }
 });
 
@@ -122,6 +126,16 @@ async function unregisterChannel (channel,requestChannel) {
     embed("Unregister","FF6600","The channel you requested was not registered."
          +"```" + channel.name + " | " + channel.id + ":" + channel.guild + "```",requestChannel);
   }
+}
+
+async function getRichPresence(userID,channelID) {
+  let channel = client.channels.cache.get(channelID);
+  let member = channel.guild.members.cache.get(userID);
+  let user = member.user;
+  let presence = user.presence;
+  let activities = user.presence.activities;
+  console.log(presence);
+  console.log(activities);
 }
 
 async function getRegistered() {
