@@ -26,6 +26,8 @@ client.on('message', async message => {
           embed("Register","FF6600","The requested channel (" + taggedChannel.name + ":" + taggedChannel.id + ") is not a voice channel.",taggedChannel);
         }
       }
+    } else {
+      //no permission
     }
   }
   if (message.content.startsWith("z$unregister")) {
@@ -40,6 +42,8 @@ client.on('message', async message => {
           embed("Unregister","FF6600","The requested channel (" + taggedChannel.name + ":" + taggedChannel.id + ") is not a voice channel.",taggedChannel);
         }
       }
+    } else {
+      //no permission
     }
   }
   if (message.content.startsWith("z$list")) {
@@ -59,6 +63,7 @@ client.on('message', async message => {
   }
 });
 
+//voice update
 client.on('voiceStateUpdate', async (oldState,newState) => {
   if (newState.channelID == null) {
     //user left the channel
@@ -81,11 +86,18 @@ client.on('voiceStateUpdate', async (oldState,newState) => {
 
 function hasPermission(channel, author) {
   //console.log(channel.guild);
-  return true;
+  let member = channel.guild.members.cache.get(author.id);
+  console.log(member.permissions);
+  if (member.permissions.has("MANAGE_CHANNELS")){
+    return true;
+  }
+  //console.log(member);
+  return false;
 }
 
 async function registerChannel (channel, requestChannel) {
-  if (!isRegistered(channel)) {
+  if (await isRegistered(channel) == false) {
+    console.log("CHANNEL: " + channel);
     await dbCon.run(`INSERT INTO channels(channelId) VALUES(${channel.id})`);
     // get the last insert id
     console.log(`The channel ${channel.id} has been added to the table.`);
@@ -99,7 +111,7 @@ async function registerChannel (channel, requestChannel) {
 }
 
 async function unregisterChannel (channel,requestChannel) {
-  if (isRegistered(channel)) {
+  if (await isRegistered(channel) == true) {
     await dbCon.run(`DELETE FROM channels WHERE channelId = ${channel.id}`);
     // get the last insert id
     console.log(`The channel ${channel.id} has been removed from the table.`);
@@ -115,23 +127,25 @@ async function unregisterChannel (channel,requestChannel) {
 async function getRegistered() {
   let returnedChannels = [];
   let rows = await dbCon.query(`SELECT channelId as id FROM channels`);
-  console.log(rows);
+  //console.log(rows);
   for (row of rows) {
     var channel = client.channels.cache.get(row.id);
     var channelRow = {"id":row.id, "guild":channel.guild.id, "name":channel.name};
     var len = returnedChannels.push(channelRow);
-    console.log(channelRow);
+    //console.log(channelRow);
   }
   return returnedChannels;
 }
 
 async function isRegistered(channel) {
   let registered = await getRegistered();
-  if (registered.includes(channel.id)) {
-    return true;
-  } else {
-    return false;
+  console.log(registered);
+  for (r of registered) {
+    if (r.id == channel.id) {
+      return true;
+    }
   }
+  return false;
 }
 
 function embed(title,color,description,channel) {
