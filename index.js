@@ -21,19 +21,37 @@ client.on('message', async message => {
         console.log(c);
         var taggedChannel = message.guild.channels.cache.get(c);
         if (taggedChannel.type == "voice") {
-          registerChannel(taggedChannel);
+          registerChannel(taggedChannel,message.channel);
+        } else {
+          embed("Register","FF6600","The requested channel (" + taggedChannel.name + ":" + taggedChannel.id + ") is not a voice channel.",taggedChannel);
+        }
+      }
+    }
+  }
+  if (message.content.startsWith("z$unregister")) {
+    if (hasPermission(message.channel, message.author)) {
+      var channels = message.content.match(/(?=\s)?([0-9]{18})(?=\s)?/g); //returns array of channel ids in message
+      for (c of channels) {
+        console.log(c);
+        var taggedChannel = message.guild.channels.cache.get(c);
+        if (taggedChannel.type == "voice") {
+          unregisterChannel(taggedChannel,message.channel);
+        } else {
+          embed("Unregister","FF6600","The requested channel (" + taggedChannel.name + ":" + taggedChannel.id + ") is not a voice channel.",taggedChannel);
         }
       }
     }
   }
   if (message.content.startsWith("z$list")) {
     var registered = await getRegistered();
-    var description = "```";
+    var description = "```    NAME   |     CHANNEL       |      GUILD         \n";
+        description +=   "----------------------------------------------------\n";
     for (r of registered) {
+      let space = getOffset(10-r.name.length);
       console.log(r.name + " | " + r.id + ":" + r.guild + "\n");
-      description += r.name + " | " + r.id + ":" + r.guild + "\n";
+      description += space + r.name + " | " + r.id + ":" + r.guild + "\n";
     }
-    embed("Registered Channels","FEFEFE",description+"```",message.channel);
+    embed("Registered Channels","FF6600",description+"```",message.channel);
   }
   if (message.content.startsWith("z$close")) {
     dbCon.close();
@@ -42,8 +60,22 @@ client.on('message', async message => {
 });
 
 client.on('voiceStateUpdate', async (oldState,newState) => {
-  if (isRegistered(newState.channel)) {
-    console.log(newState);
+  if (newState.channelID == null) {
+    //user left the channel
+    console.log("user " + oldState.id + " left channel " + oldState.channelID);
+    if (isRegistered(client.channels.cache.get(oldState.channelID))) {
+      let oldS = oldState;
+      delete oldS.guild;
+      console.log(oldS);
+    }
+  } else if (oldState.channelID == null) {
+    //user joined the channel
+    console.log("user " + newState.id + " joined channel " + newState.channelID);
+    if (isRegistered(newState.channel)) {
+      let newS = newState;
+      delete newS.guild;
+      console.log(newS);
+    }
   }
 });
 
@@ -52,10 +84,32 @@ function hasPermission(channel, author) {
   return true;
 }
 
-async function registerChannel (channel) {
+async function registerChannel (channel, requestChannel) {
+  if (!isRegistered(channel)) {
     await dbCon.run(`INSERT INTO channels(channelId) VALUES(${channel.id})`);
     // get the last insert id
-    console.log(`A row has been inserted with rowid ${this.lastID}`);
+    console.log(`The channel ${channel.id} has been added to the table.`);
+    embed("Register","FF6600","The channel you requested was successfully registered.\n"
+         +"```" + channel.name + " | " + channel.id + ":" + channel.guild + "```",requestChannel);
+  } else {
+    //already registered
+    embed("Register","FF6600","The channel you requested was already registered."
+         +"```" + channel.name + " | " + channel.id + ":" + channel.guild + "```",requestChannel);
+  }
+}
+
+async function unregisterChannel (channel,requestChannel) {
+  if (isRegistered(channel)) {
+    await dbCon.run(`DELETE FROM channels WHERE channelId = ${channel.id}`);
+    // get the last insert id
+    console.log(`The channel ${channel.id} has been removed from the table.`);
+    embed("Unegister","FF6600","The channel you requested was successfully unregistered.\n"
+         +"```" + channel.name + " | " + channel.id + ":" + channel.guild + "```",requestChannel);
+  } else {
+    //already unregistered
+    embed("Unregister","FF6600","The channel you requested was not registered."
+         +"```" + channel.name + " | " + channel.id + ":" + channel.guild + "```",requestChannel);
+  }
 }
 
 async function getRegistered() {
@@ -90,4 +144,12 @@ function embed(title,color,description,channel) {
       .setDescription(description);
     // Send the embed to the same channel as the message
     channel.send(embed);
+}
+
+function getOffset(n) {
+  let offset = "";
+  for (i = 0; i < n; i++) {
+    offset += " ";
+  }
+  return offset;
 }

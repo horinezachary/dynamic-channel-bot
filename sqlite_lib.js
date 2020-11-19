@@ -26,7 +26,7 @@ function asyncQuery(query, values) {
 //does not need to return data.
 function asyncRun(query, values) {
   return new Promise((resolve, reject) => {
-    db.run(query, values, function(error) {
+    db.run(query, values, function(error, results) {
       if (error) {
         console.log(error);
         reject(error);
