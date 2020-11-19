@@ -1,4 +1,4 @@
-const CLIENT_TOKEN = "NTY1MzUzMzc0MzI5OTk1Mjk2.XK1MXA.yUNzLtCxazzNoX3vkP7irOQiq5A";
+const CLIENT_TOKEN = require('./config.js').CLIENT_TOKEN;
 
 const dbCon = require('./sqlite_lib');
 dbCon.start();
@@ -41,6 +41,12 @@ client.on('message', async message => {
   }
 });
 
+client.on('voiceStateUpdate', async (oldState,newState) => {
+  if (isRegistered(newState.channel)) {
+    console.log(newState);
+  }
+});
+
 function hasPermission(channel, author) {
   //console.log(channel.guild);
   return true;
@@ -63,6 +69,15 @@ async function getRegistered() {
     console.log(channelRow);
   }
   return returnedChannels;
+}
+
+async function isRegistered(channel) {
+  let registered = await getRegistered();
+  if (registered.includes(channel.id)) {
+    return true;
+  } else {
+    return false;
+  }
 }
 
 function embed(title,color,description,channel) {
