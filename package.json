@@ -1,0 +1,24 @@
+{
+  "name": "dynamic-channel-bot",
+  "version": "0.0.1",
+  "description": "Discord bot for changing a channel name based on the first member to join with an active discord RPC object",
+  "main": "index.js",
+  "scripts": {
+    "test": "node index.js",
+    "start": "node index.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/horinezachary/dynamic-channel-bot.git"
+  },
+  "author": "Zachary Horine",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/horinezachary/dynamic-channel-bot/issues"
+  },
+  "homepage": "https://github.com/horinezachary/dynamic-channel-bot#readme",
+  "dependencies": {
+    "discord.js": "^12.4.1",
+    "sqlite3": "^5.0.0"
+  }
+}
