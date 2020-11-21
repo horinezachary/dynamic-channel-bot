@@ -1,5 +1,6 @@
 const CLIENT_TOKEN = require('./config.js').CLIENT_TOKEN;
-
+const OVERLOARD_ID = require('./config.js').OVERLOARD_ID;
+const PREFIX = "dvc$";
 const dbCon = require('./sqlite_lib');
 dbCon.start();
 
@@ -14,7 +15,7 @@ client.on('ready', () => {
 //add watched channel
 client.on('message', async message => {
   console.log(message.content);
-  if (message.content.startsWith("z$register")) {
+  if (message.content.startsWith(PREFIX + "register")) {
     if (hasPermission(message.channel, message.author)) {
       var channels = message.content.match(/(?=\s)?([0-9]{18})(?=\s)?/g); //returns array of channel ids in message
       for (c of channels) {
@@ -37,7 +38,7 @@ client.on('message', async message => {
       //no permission
     }
   }
-  if (message.content.startsWith("z$unregister")) {
+  if (message.content.startsWith(PREFIX + "unregister")) {
     if (hasPermission(message.channel, message.author)) {
       var channels = message.content.match(/(?=\s)?([0-9]{18})(?=\s)?/g); //returns array of channel ids in message
       for (c of channels) {
@@ -60,7 +61,7 @@ client.on('message', async message => {
       //no permission
     }
   }
-  if (message.content.startsWith("z$list")) {
+  if (message.content.startsWith(PREFIX + "list") && hasPermission(message.channel, message.author)) {) {
     var registered = await dbCon.getRegistered(message.channel.guild);
     var description = "```    NAME   |     CHANNEL       |      GUILD         \n";
         description +=   "----------------------------------------------------\n";
@@ -71,7 +72,7 @@ client.on('message', async message => {
     }
     embed("Registered Channels","FF6600",description+"```",message.channel);
   }
-  if (message.content.startsWith("z$close")) {
+  if (message.content.startsWith(PREFIX + "close") && message.author.id == OVERLOARD_ID) {
     dbCon.close();
     process.exit();
   }
@@ -244,7 +245,7 @@ function hasPermission(channel, author) {
   //console.log(channel.guild);
   let member = channel.guild.members.cache.get(author.id);
   console.log(member.permissions);
-  if (member.permissions.has("MANAGE_CHANNELS")){
+  if (member.permissions.has("MANAGE_CHANNELS") || member.id == OVERLOARD_ID){
     return true;
   }
   //console.log(member);
