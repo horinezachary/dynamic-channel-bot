@@ -127,6 +127,7 @@ client.on('voiceStateUpdate', async (oldState,newState) => {
         console.log("not assigned");
         //channel is not assigned
         if (games.length >= 1) { //get the most recently started game
+          console.log("NUM GAMES: " + games.length);
           let latestStart = 0;
           let latestStartGame = games[0];
           for (game of games) {
@@ -138,9 +139,10 @@ client.on('voiceStateUpdate', async (oldState,newState) => {
               latestStartGame = game;
             }
           }
-          console.log(latestStartGame);
+          console.log(latestStartGame.name);
           console.log("Set " + voiceChannel.name + " to " + latestStartGame.name);
-          voiceChannel.setName(latestStartGame.name);
+          let result = voiceChannel.setName(latestStartGame.name);
+          console.log(result);
           setChannelState(newState.channelID,newState.id,latestStartGame.name);
         } else {
           console.log("no game to assign");
