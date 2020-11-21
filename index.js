@@ -32,12 +32,22 @@ client.on('message', async message => {
                  +"```" + taggedChannel.name + " | " + taggedChannel.id + ":" + taggedChannel.guild + "```",message.channel);
           }
         } else {
-          embed("Register","FF6600","The requested channel (" + taggedChannel.name + ":" + taggedChannel.id + ") is not a voice channel.",taggedChannel);
+          embed("Register","FF6600","The requested channel (" + taggedChannel.name + ":" + taggedChannel.id + ") is not a voice channel.",message.channel);
         }
       }
     } else {
       //no permission
     }
+  }
+  if (message.content.startsWith(PREFIX + "help") && hasPermission(message.channel, message.author)) {
+    embed("Dynamic Channels **Help**","FF6600","Commands:\n`"
+         +"`dvc$register`: This command is used to add a channel to the dynamic channel listing.\n"
+         +"    Example: `dvc$register 123412341234123412`\n"
+         +"`dvc$unregister`: This command is used to add a channel to the dynamic channel listing.\n"
+         +"    Example: `dvc$unregister 123412341234123412`\n"
+         +"`dvc$list`: This command will list all registered channels in the current guild.\n"
+         +"`dvc$help`: This command will return this help text.\n"
+         +"\n**NOTE**: channels must be input as id numbers, as voice channels do not have tags.",message.channel)
   }
   if (message.content.startsWith(PREFIX + "reload") && hasPermission(message.channel, message.author)) {
     let registeredChannelIDs = await dbCon.getRegistered(message.guild);
@@ -62,7 +72,7 @@ client.on('message', async message => {
                  +"```" + taggedChannel.name + " | " + taggedChannel.id + ":" + taggedChannel.guild + "```",message.channel);
           }
         } else {
-          embed("Unregister","FF6600","The requested channel (" + taggedChannel.name + ":" + taggedChannel.id + ") is not a voice channel.",taggedChannel);
+          embed("Unregister","FF6600","The requested channel (" + taggedChannel.name + ":" + taggedChannel.id + ") is not a voice channel.",message.channel);
         }
       }
     } else {
@@ -85,6 +95,11 @@ client.on('message', async message => {
     process.exit();
   }
 });
+
+client.on('presenceUpdate', async (oldPresence,newPresence) => {
+
+});
+
 
 //voice update
 client.on('voiceStateUpdate', async (oldState,newState) => {
