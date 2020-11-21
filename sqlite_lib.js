@@ -8,6 +8,7 @@ function dbInit() {
     console.log('Connected to the dynChannel SQlite database.');
   });
   db.run(`CREATE TABLE IF NOT EXISTS channels(channelId VARCHAR(18), guildId VARCHAR(18))`);
+  db.run(`CREATE TABLE IF NOT EXISTS dynamics(channelId VARCHAR(18), leaderId VARCHAR(18), title)`);
 }
 
 //returns data. query run as db.all
@@ -86,6 +87,52 @@ async function isRegistered(channel) {
   return false;
 }
 
+async function getDynamic(channel) {
+  let rows = await asyncQuery(`SELECT channelId, leaderId, title FROM dynamics WHERE channelId = ${channel.id}`);
+  console.log(rows);
+  if (rows.length >= 1) {
+    return rows;
+  } else {
+    return false;
+  }
+}
+
+async function isDynamicRegistered(channel) {
+  let rows = await asyncQuery(`SELECT channelId as id FROM dynamics WHERE channelId = ${channel.id}`);
+  console.log(rows);
+  if (rows.length >= 1) {
+    return true;
+  } else {
+    return false;
+  }
+}
+
+async function registerDynamic (channel,leader,title) {
+  if (await isDynamicRegistered(channel) == false) {
+    console.log("CHANNEL: " + channel);
+    await asyncRun(`INSERT INTO dynamics(channelId,leaderId,title) VALUES(${channel.id},${leader.id},"${title}")`);
+    // get the last insert id
+    console.log(`The channel ${channel.id} has been added to the table.`);
+    return true;
+  } else { //already registered, update instead
+    await asyncRun(`UPDATE dynamics SET channelId = ${channel.id}, leaderId = ${leader.id}, title = "${title}" WHERE channelId = ${channel.id})`);
+    return true;
+  }
+}
+
+//remove channel from list of watched channels, returns true if success
+async function unregisterDynamic (channel) {
+  if (await isDynamicRegistered(channel) == true) {
+    await asyncRun(`DELETE FROM dynamics WHERE channelId = ${channel.id}`);
+    // get the last insert id
+    console.log(`The channel ${channel.id} has been removed from the table.`);
+    return true;
+  } else {
+    //already unregistered
+    return false;
+  }
+}
+
 module.exports = {
   start: function() {
     return dbInit();
@@ -107,6 +154,18 @@ module.exports = {
   },
   isRegistered: function(channel) {
     return isRegistered(channel);
+  },
+  getDynamic: function(channel) {
+    return getDynamic(channel);
+  },
+  isDynamicRegistered: function(channel) {
+    return isDynamicRegistered(channel);
+  },
+  registerDynamic: function(channel,leader,title) {
+    return registerDynamic (channel,leader,title);
+  },
+  unregisterDynamic: function(channel) {
+    return unregisterDynamic (channel);
   },
   close: function() {
     db.close();
