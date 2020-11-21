@@ -10,6 +10,7 @@ const client = new discord.Client();
 client.login(CLIENT_TOKEN);
 client.on('ready', () => {
   console.log(`Logged in as ${client.user.tag}!`);
+  client.user.setActivity(PREFIX,{type:"LISTENING"});
 });
 
 //add watched channel
@@ -61,7 +62,7 @@ client.on('message', async message => {
       //no permission
     }
   }
-  if (message.content.startsWith(PREFIX + "list") && hasPermission(message.channel, message.author)) {) {
+  if (message.content.startsWith(PREFIX + "list") && hasPermission(message.channel, message.author)) {
     var registered = await dbCon.getRegistered(message.channel.guild);
     var description = "```    NAME   |     CHANNEL       |      GUILD         \n";
         description +=   "----------------------------------------------------\n";
