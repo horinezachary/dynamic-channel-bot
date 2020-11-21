@@ -106,7 +106,7 @@ client.on('voiceStateUpdate', async (oldState,newState) => {
           console.log(game);
           if (game != false) {
             console.log("Set " + voiceChannel.name + " to " + game.name);
-            setChannelState(voiceChannel,game.userID,game.name);
+            setChannelState(voiceChannel.id,game.userID,game.name);
             voiceChannel.setName(game.name);
           }
           //if none, set title and deactivate
@@ -182,7 +182,7 @@ async function reload(channel) {
   if (game != false) {
     console.log(channel.id);
     console.log("Set " + channel.name + " to " + game.name);
-    setChannelState(channel,game.userID,game.name);
+    setChannelState(channel.id,game.userID,game.name);
     channel.setName(game.name);
   }
   //if none, set title and deactivate
@@ -196,9 +196,27 @@ async function reload(channel) {
 async function checkChannelState(channelID) {
   let channel = await client.channels.cache.get(channelID).guild.channels.cache.get(channelID).fetch();
   if (channel.members.size >= 1) {
-    memberGames = await getMemberGames(channel.members.array());
-    console.log("MEMBERGAMES");
-    console.log(memberGames);
+    let memberGames = [];
+    for (member of channel.members.array()) {
+      let games = await getGameActivities(member.id);
+      console.log("RETURNED GAME ACTIVITIES");
+      console.log(games);
+      if (games.length >= 1) {
+        let latestStart = 0;
+        let latestStartGame = games[0];
+        for (game of games) {
+          if (game.createdTimestamp == null) {
+            //this should never hppen....
+            //do nothing (if first element it'll already be picked)
+          }
+          else if (game.createdTimestamp >= latestStart) {
+            latestStartGame = game;
+          }
+          console.log(game);
+          memberGames.push(game);
+        }
+      }
+    }
     let gameResult = await sortGames(memberGames);
     console.log(gameResult);
     return gameResult;
@@ -208,47 +226,9 @@ async function checkChannelState(channelID) {
   }
 }
 
-async function getMemberGames(memberArray) {
-  return new Promise(async (resolve, reject) => {
-    let memberGames = [];
-    if (memberArray == null) {
-      reject();
-    }
-    for (member of memberArray) {
-      //console.log("MEMBER");
-      //console.log(member);
-      //console.log(member.user.id);
-      let memberGames = [];
-      let games = await getGameActivities(member.id);
-      resolve(games);
-      console.log("RETURNED GAME ACTIVITIES");
-      console.log(games);
-      if (games.length >= 1) {
-        //let latestStart = 0;
-        //let latestStartGame = games[0];
-        for (game of games) {
-          console.log(game);
-          /*
-          if (game.createdTimestamp == null) {
-            //this should never hppen....
-            //do nothing (if first element it'll already be picked)
-          }
-          else if (game.createdTimestamp >= latestStart) {
-            latestStartGame = game;
-          }
-          */
-          console.log(game.name);
-          await memberGames.push(game);
-        }
-      }
-    }
-    resolve(memberGames);
-  });
-}
-
 async function sortGames(games) {
   let count = [];
-  for (game in games) {
+  for (game of games) {
     let index = 999;
     for (c in count) {
       if (game.name == count[c].name) {
@@ -270,9 +250,6 @@ async function sortGames(games) {
       largest = result;
     }
   }
-  console.log("SORTGAMES");
-  console.log(count);
-  console.log(largest);
   return largest;
 }
 
@@ -290,13 +267,11 @@ async function clearChannelState(channelID) {
 
 
 function hasPermission(channel, author) {
-  //console.log(channel.guild);
   let member = channel.guild.members.cache.get(author.id);
   console.log(member.permissions);
   if (member.permissions.has("MANAGE_CHANNELS") || member.id == OVERLOARD_ID){
     return true;
   }
-  //console.log(member);
   return false;
 }
 
@@ -304,7 +279,6 @@ async function getRichPresence(userID) {
   let member = await client.users.fetch(userID);
   let presence = member.presence;
   let activities = presence.activities;
-  //console.log(activities);
   return activities;
 }
 
@@ -317,8 +291,6 @@ async function getGameActivities(userID) {
       games.push(activity);
     }
   }
-  console.log("GAME ACTIVITIES");
-  console.log(games);
   return games;
 }
 

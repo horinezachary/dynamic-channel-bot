@@ -115,7 +115,7 @@ async function registerDynamic (channel,leader,title) {
     console.log(`The channel ${channel.id} has been added to the table.`);
     return true;
   } else { //already registered, update instead
-    await asyncRun(`UPDATE dynamics SET channelId = ${channel.id}, leaderId = ${leader.id}, title = "${title}" WHERE channelId = ${channel.id})`);
+    await asyncRun(`UPDATE dynamics SET channelId = ${channel.id}, leaderId = ${leader.id}, title = "${title}" WHERE channelId = ${channel.id}`);
     return true;
   }
 }
