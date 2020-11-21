@@ -1,5 +1,5 @@
 const CLIENT_TOKEN = require('./config.js').CLIENT_TOKEN;
-const OVERLOARD_ID = require('./config.js').OVERLOARD_ID;
+const OVERLORD_ID = require('./config.js').OVERLORD_ID;
 const PREFIX = "dvc$";
 const dbCon = require('./sqlite_lib');
 dbCon.start();
@@ -90,14 +90,15 @@ client.on('message', async message => {
     }
     embed("Registered Channels","FF6600",description+"```",message.channel);
   }
-  if (message.content.startsWith(PREFIX + "close") && message.author.id == OVERLOARD_ID) {
+  if (message.content.startsWith(PREFIX + "close") && message.author.id == OVERLORD_ID) {
     dbCon.close();
     process.exit();
   }
 });
 
 client.on('presenceUpdate', async (oldPresence,newPresence) => {
-
+  console.log(oldPresence);
+  console.log(newPresence);
 });
 
 
@@ -284,7 +285,7 @@ async function clearChannelState(channelID) {
 function hasPermission(channel, author) {
   let member = channel.guild.members.cache.get(author.id);
   console.log(member.permissions);
-  if (member.permissions.has("MANAGE_CHANNELS") || member.id == OVERLOARD_ID){
+  if (member.permissions.has("MANAGE_CHANNELS") || member.id == OVERLORD_ID){
     return true;
   }
   return false;
