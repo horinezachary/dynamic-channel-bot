@@ -39,6 +39,13 @@ client.on('message', async message => {
       //no permission
     }
   }
+  if (message.content.startsWith(PREFIX + "reload") && hasPermission(message.channel, message.author)) {
+    let registeredChannelIDs = await dbCon.getRegistered(message.guild);
+    for (dbChannel of registeredChannelIDs) {
+      let channel = await message.guild.channels.cache.get(dbChannel.id);
+      reload(channel);
+    }
+  }
   if (message.content.startsWith(PREFIX + "unregister")) {
     if (hasPermission(message.channel, message.author)) {
       var channels = message.content.match(/(?=\s)?([0-9]{18})(?=\s)?/g); //returns array of channel ids in message
@@ -133,11 +140,11 @@ client.on('voiceStateUpdate', async (oldState,newState) => {
           let latestStart = 0;
           let latestStartGame = games[0];
           for (game of games) {
-            if (game.timestamps.start == null) {
+            if (game.createdTimestamp == null) {
               //do nothing (if this happens to the first game in the listing it'll show up anyways)
             }
-            else if (game.timestamps.start > latestStart) {
-              latestStart = game.timestamps.start;
+            else if (game.createdTimestamp > latestStart) {
+              latestStart = game.createdTimestamp;
               latestStartGame = game;
             }
           }
@@ -169,37 +176,77 @@ async function getChannelState(channelID) {
   return state;
 }
 
+async function reload(channel) {
+  let game = await checkChannelState(channel.id);
+  console.log(game);
+  if (game != false) {
+    console.log(channel.id);
+    console.log("Set " + channel.name + " to " + game.name);
+    setChannelState(channel,game.userID,game.name);
+    channel.setName(game.name);
+  }
+  //if none, set title and deactivate
+  if (game == false) {
+    clearChannelState(channel.id);
+    channel.setName("Dynamic VC");
+  }
+}
+
+
 async function checkChannelState(channelID) {
-  let channel = await client.channels.cache.get(channelID).guild.channels.cache.get(channelID);
-  console.log(channel);
-  if (channel.members.length > 0) {
-    let memberGames = [];
-    for (member of channel.members) {
-      let games = await getGameActivities(member.id);
-      if (games.length >= 1) {
-        let latestStart = 0;
-        let latestStartGame = games[0];
-        for (game of games) {
-          if (game.timestamps.start == null) {
-            //do nothing (if first element it'll already be picked)
-          }
-          else if (game.timestamps.start >= latestStart) {
-            latestStartGame = game;
-          }
-        }
-        memberGames.push(latestStartGame);
-      }
-    }
+  let channel = await client.channels.cache.get(channelID).guild.channels.cache.get(channelID).fetch();
+  if (channel.members.size >= 1) {
+    memberGames = await getMemberGames(channel.members.array());
     console.log("MEMBERGAMES");
     console.log(memberGames);
-    let game = await sortGames(memberGames);
-    return game;
+    let gameResult = await sortGames(memberGames);
+    console.log(gameResult);
+    return gameResult;
   } else {
+    console.log("no members in this channel");
     return false;
   }
 }
 
-function sortGames(games) {
+async function getMemberGames(memberArray) {
+  return new Promise(async (resolve, reject) => {
+    let memberGames = [];
+    if (memberArray == null) {
+      reject();
+    }
+    for (member of memberArray) {
+      //console.log("MEMBER");
+      //console.log(member);
+      //console.log(member.user.id);
+      let memberGames = [];
+      let games = await getGameActivities(member.id);
+      resolve(games);
+      console.log("RETURNED GAME ACTIVITIES");
+      console.log(games);
+      if (games.length >= 1) {
+        //let latestStart = 0;
+        //let latestStartGame = games[0];
+        for (game of games) {
+          console.log(game);
+          /*
+          if (game.createdTimestamp == null) {
+            //this should never hppen....
+            //do nothing (if first element it'll already be picked)
+          }
+          else if (game.createdTimestamp >= latestStart) {
+            latestStartGame = game;
+          }
+          */
+          console.log(game.name);
+          await memberGames.push(game);
+        }
+      }
+    }
+    resolve(memberGames);
+  });
+}
+
+async function sortGames(games) {
   let count = [];
   for (game in games) {
     let index = 999;
