@@ -4,6 +4,9 @@ A basic Discord bot for dynamically changing channel names based on Rich Presenc
 
 When users join a channel registered with the bot, the bot will change the name of the channel to match their Rich Presence data. When multiple users are in a channel, the first user takes precedence. If the leader leaves the VC, then a new leader is chosen, and the game title is reassessed.
 
+### Add this bot to your server!
+https://discord.com/oauth2/authorize?client_id=565353374329995296&scope=bot&permissions=8
+
 ### Commands
 
 `dvc$register:` This command is used to add a channel to the dynamic channel listing. Example:
