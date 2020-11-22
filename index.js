@@ -1,6 +1,7 @@
 const CLIENT_TOKEN = require('./config.js').CLIENT_TOKEN;
 const OVERLORD_ID = require('./config.js').OVERLORD_ID;
 const PREFIX = require('./config.js').PREFIX;
+const CHANNEL_PREFIX = require('./config.js').CHANNEL_PREFIX;
 
 const dbCon = require('./sqlite_lib');
 dbCon.start();
@@ -171,13 +172,13 @@ client.on('voiceStateUpdate', async (oldState,newState) => {
           if (game != false) {
             console.log("Set " + voiceChannel.name + " to " + game.name);
             setChannelState(voiceChannel.id,game.userID,game.name);
-            voiceChannel.setName(game.name);
+            voiceChannel.setName(CHANNEL_PREFIX + game.name);
           }
           //if none, set title and deactivate
           if (game == false) {
             clearChannelState(oldState.channelID);
             let voiceRegistration = await dbCon.isRegistered(voiceChannel);
-            voiceChannel.setName(voiceRegistration.originalName);
+            voiceChannel.setName(CHANNEL_PREFIX + voiceRegistration.originalName);
           }
         } else {
           console.log("Not Leader");
@@ -215,7 +216,7 @@ client.on('voiceStateUpdate', async (oldState,newState) => {
           }
           console.log(latestStartGame.name);
           console.log("Set " + voiceChannel.name + " to " + latestStartGame.name);
-          let result = voiceChannel.setName(latestStartGame.name);
+          let result = voiceChannel.setName(CHANNEL_PREFIX + latestStartGame.name);
           console.log(result);
           setChannelState(newState.channelID,newState.id,latestStartGame.name);
         } else {
@@ -249,13 +250,13 @@ async function reload(channel) {
     console.log(channel.id);
     console.log("Set " + channel.name + " to " + game.name);
     setChannelState(channel.id,game.userID,game.name);
-    channel.setName(game.name);
+    channel.setName(CHANNEL_PREFIX + game.name);
   }
   //if none, set title and deactivate
   if (game == false) {
     clearChannelState(channel.id);
     let voiceRegistration = await dbCon.isRegistered(channel);
-    channel.setName(voiceRegistration.originalName);
+    channel.setName(CHANNEL_PREFIX + voiceRegistration.originalName);
   }
 }
 
