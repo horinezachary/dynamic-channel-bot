@@ -29,6 +29,7 @@ client.on('message', async message => {
         if (taggedChannel.type == "voice") {
           let status = await dbCon.registerChannel(taggedChannel);
           if (status == true) { //success
+            taggedChannel.setName(CHANNEL_PREFIX + taggedChannel.name);
             embed("Register","FF6600","The channel you requested was successfully registered.\n"
                  +"```" + taggedChannel.name + " | " + taggedChannel.id + ":" + taggedChannel.guild + "```",message.channel);
           } else{ //failure
@@ -69,8 +70,8 @@ client.on('message', async message => {
         if (taggedChannel.type == "voice") {
           let status = await dbCon.unregisterChannel(taggedChannel);
           if (status == true) { //success
-            let voiceRegistration = await dbCon.isRegistered(voiceChannel);
-            voiceChannel.setName(voiceRegistration.originalName);
+            let voiceRegistration = await dbCon.isRegistered(taggedChannel);
+            taggedChannel.setName(voiceRegistration.originalName);
             embed("Unregister","FF6600","The channel you requested was successfully unregistered.\n"
                  +"```" + taggedChannel.name + " | " + taggedChannel.id + ":" + taggedChannel.guild + "```",message.channel);
           } else{ //failure
