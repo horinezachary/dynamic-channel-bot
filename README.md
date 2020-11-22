@@ -16,4 +16,6 @@ dvc$unregister 123412341234123412
 ```
 `dvc$list:` This command will list all registered channels in the current guild.
 
+`dvc$help:` This command will return the help text in the channel it was called.\n"
+
 **NOTE:** channels must be input as id numbers, as voice channels do not have tags.

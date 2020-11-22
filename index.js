@@ -219,6 +219,7 @@ client.on('voiceStateUpdate', async (oldState,newState) => {
           //no games, don't assign
         }
       } else {
+        //already assigned
         console.log("already assigned");
       }
     }
