@@ -68,9 +68,9 @@ client.on('message', async message => {
         console.log(c);
         var taggedChannel = message.guild.channels.cache.get(c);
         if (taggedChannel.type == "voice") {
+          let voiceRegistration = await dbCon.isRegistered(taggedChannel);
           let status = await dbCon.unregisterChannel(taggedChannel);
           if (status == true) { //success
-            let voiceRegistration = await dbCon.isRegistered(taggedChannel);
             taggedChannel.setName(voiceRegistration.originalName);
             embed("Unregister","FF6600","The channel you requested was successfully unregistered.\n"
                  +"```" + taggedChannel.name + " | " + taggedChannel.id + ":" + taggedChannel.guild + "```",message.channel);
