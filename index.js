@@ -3,6 +3,8 @@ const OVERLORD_ID = require('./config.js').OVERLORD_ID;
 const PREFIX = require('./config.js').PREFIX;
 const CHANNEL_PREFIX = require('./config.js').CHANNEL_PREFIX;
 
+console.log("NODE VERSION: " + process.version);
+
 const dbCon = require('./sqlite_lib');
 dbCon.start();
 
@@ -67,6 +69,8 @@ client.on('message', async message => {
         if (taggedChannel.type == "voice") {
           let status = await dbCon.unregisterChannel(taggedChannel);
           if (status == true) { //success
+            let voiceRegistration = await dbCon.isRegistered(voiceChannel);
+            voiceChannel.setName(voiceRegistration.originalName);
             embed("Unregister","FF6600","The channel you requested was successfully unregistered.\n"
                  +"```" + taggedChannel.name + " | " + taggedChannel.id + ":" + taggedChannel.guild + "```",message.channel);
           } else{ //failure
@@ -87,10 +91,11 @@ client.on('message', async message => {
         description +=   "----------------------------------------------------\n";
                         //12345678901234 | 12345678901234 | 123456789012345678
     for (r of registered) {
-      let space = getOffset(14-r.name.length);
+      let offset = getOffset(14-r.name.length);
       let originalOffset = getOffset(14-r.originalName.length);
+      console.log(offset,originalOffset);
       console.log(r.name + " | " + r.originalName + " | " + r.id + ":" + r.guild + "\n");
-      description += space + r.name + " | " + originalOffset + r.originalName + " | " + r.id + "\n";
+      description += offset + r.name + " | " + originalOffset + r.originalName + " | " + r.id + "\n";
     }
     embed("Registered Channels","FF6600",description+"```",message.channel);
   }
@@ -390,6 +395,7 @@ function embed(title,color,description,channel) {
       .setColor(color)
       // Set the main content of the embed
       .setDescription(description);
+      console.log(description);
     // Send the embed to the same channel as the message
     channel.send(embed);
 }
