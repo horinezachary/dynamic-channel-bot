@@ -396,6 +396,9 @@ function embed(title,color,description,channel) {
 
 function getOffset(n) {
   let offset = "";
+  if (n < 0) {
+    n = 0;
+  }
   for (i = 0; i < n; i++) {
     offset += " ";
   }
