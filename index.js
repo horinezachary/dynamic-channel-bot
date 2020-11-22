@@ -87,8 +87,10 @@ client.on('message', async message => {
   }
   if (message.content.startsWith(PREFIX + "list") && hasPermission(message.channel, message.author)) {
     var registered = await dbCon.getRegistered(message.channel.guild);
-    var description = "```\n      NAME     | ORIGINAL NAME  |      CHANNEL      \n";
-        description +=     "----------------------------------------------------\n";
+    var description = "```\n"
+                    + "┌────────────────┬────────────────┬────────────────────┐\n"
+                    + "│ NAME           │ ORIGINAL NAME  │ CHANNEL            │\n"
+                    + "├────────────────┼────────────────┼────────────────────┤\n";
                         //12345678901234 | 12345678901234 | 123456789012345678
     for (r of registered) {
       console.log(r);
@@ -100,9 +102,10 @@ client.on('message', async message => {
       let originalOffset = getOffset(14-r.originalName.length);
       console.log(offset,originalOffset);
       console.log(name + " | " + r.originalName + " | " + r.id + ":" + r.guild + "\n");
-      description += name + offset + " | " + r.originalName + originalOffset + " | " + r.id + "\n";
+      description += "│ " + name + offset + " │ " + r.originalName + originalOffset + " │ " + r.id + " │\n";
     }
-    embed("Registered Channels","FF6600",description+"```",message.channel);
+    description += "└────────────────┴────────────────┴────────────────────┘\n```";
+    embed("Registered Channels","FF6600",description,message.channel);
   }
   if (message.content.startsWith(PREFIX + "close") && message.author.id == OVERLORD_ID) {
     dbCon.close();
