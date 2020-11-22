@@ -133,7 +133,10 @@ client.on('presenceUpdate', async (oldPresence,newPresence) => {
     if (voice != false) {
       //returned voice object exists and channelID != null
       let channel = await newPresence.guild.channels.cache.get(voice.channelID);
-      reload(channel);
+      if (dbCon.isRegistered(channel)) {
+        reload(channel);
+      }
+      //otherwise it's not a registered channel, and shouldn't be touched
     }
     console.log(voice);
   } else {
