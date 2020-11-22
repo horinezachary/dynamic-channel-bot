@@ -87,15 +87,20 @@ client.on('message', async message => {
   }
   if (message.content.startsWith(PREFIX + "list") && hasPermission(message.channel, message.author)) {
     var registered = await dbCon.getRegistered(message.channel.guild);
-    var description = "```      NAME     | ORIGINAL NAME  |      CHANNEL      \n";
-        description +=   "----------------------------------------------------\n";
+    var description = "```\n      NAME     | ORIGINAL NAME  |      CHANNEL      \n";
+        description +=     "----------------------------------------------------\n";
                         //12345678901234 | 12345678901234 | 123456789012345678
     for (r of registered) {
-      let offset = getOffset(14-r.name.length);
+      console.log(r);
+      let name = r.name;
+      if (name.startsWith(CHANNEL_PREFIX)) {
+        name = name.substring(CHANNEL_PREFIX.length);
+      }
+      let offset = getOffset(14-name.length);
       let originalOffset = getOffset(14-r.originalName.length);
       console.log(offset,originalOffset);
-      console.log(r.name + " | " + r.originalName + " | " + r.id + ":" + r.guild + "\n");
-      description += offset + r.name + " | " + originalOffset + r.originalName + " | " + r.id + "\n";
+      console.log(name + " | " + r.originalName + " | " + r.id + ":" + r.guild + "\n");
+      description += name + offset + " | " + r.originalName + originalOffset + " | " + r.id + "\n";
     }
     embed("Registered Channels","FF6600",description+"```",message.channel);
   }
