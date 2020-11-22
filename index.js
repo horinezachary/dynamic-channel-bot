@@ -282,7 +282,15 @@ async function checkChannelState(channelID) {
         }
       }
     }
-    let gameResult = await sortGames(memberGames);
+    let gameResult;
+    if (memberGames.length > 1) {
+      gameResult = await sortGames(memberGames);
+    } else if (memberGames.length == 1){
+      gameResult = memberGames;
+    } else {
+      //no games in channel
+      return false;
+    }
     console.log(gameResult);
     return gameResult;
   } else {
