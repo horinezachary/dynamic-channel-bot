@@ -1,6 +1,7 @@
 const CLIENT_TOKEN = require('./config.js').CLIENT_TOKEN;
 const OVERLORD_ID = require('./config.js').OVERLORD_ID;
-const PREFIX = "dvc$";
+const PREFIX = require('./config.js').PREFIX;
+
 const dbCon = require('./sqlite_lib');
 dbCon.start();
 
@@ -40,7 +41,7 @@ client.on('message', async message => {
     }
   }
   if (message.content.startsWith(PREFIX + "help") && hasPermission(message.channel, message.author)) {
-    embed("Dynamic Channels **Help**","FF6600","Commands:\n`"
+    embed("Dynamic Channels **Help**","FF6600","Commands:\n"
          +"`dvc$register`: This command is used to add a channel to the dynamic channel listing.\n"
          +"    Example: `dvc$register 123412341234123412`\n"
          +"`dvc$unregister`: This command is used to add a channel to the dynamic channel listing.\n"
@@ -99,6 +100,50 @@ client.on('message', async message => {
 client.on('presenceUpdate', async (oldPresence,newPresence) => {
   console.log(oldPresence);
   console.log(newPresence);
+  console.log(oldPresence.activities);
+  console.log(newPresence.activities);
+  let same = true;
+  if (oldPresence == null || newPresence == null || newPresence == [] || oldPresence == []) {
+    //one is null (shouldn't happen)
+    //or one is empty (happens with custom status)
+  }
+  else if (oldPresence.activities.length !== newPresence.activities.length) {
+    //different length, there has been a change
+    same = false;
+  } else {
+    console.log(oldPresence.activities.length);
+    console.log(newPresence.activities.length);
+    for (i = 0; i < (Math.max(oldPresence.activities.length,newPresence.activities.length)); i++) {
+      if (oldPresence.activities[i] && newPresence.activities[i]) {
+        if (oldPresence.activities[i].name == newPresence.activities[i].name) {
+          //the two are the same
+        } else {
+          //not the same
+          same = false;
+        }
+      } else {
+        //at least one doesn't exist
+        same = false;
+      }
+    }
+  }
+  if (same == false) {
+    //there has been a change in activity data
+    let voice = await getVoiceState(newPresence.member);
+    if (voice != false) {
+      //returned voice object exists and channelID != null
+      let channel = await newPresence.guild.channels.cache.get(voice.channelID);
+      reload(channel);
+    }
+    console.log(voice);
+  } else {
+    //no change,both are the same
+    console.log("No Rich Presence Change");
+  }
+  if (oldPresence.status != newPresence.status) {
+    //change in status
+    console.log("User " + newPresence.member.user.username + " went from " + oldPresence.status + " to " + newPresence.status);
+  }
 });
 
 
@@ -139,7 +184,7 @@ client.on('voiceStateUpdate', async (oldState,newState) => {
         //do nothing. the channel isn't assigned.
       }
     }
-  } else if (oldState.channelID == null) {
+  } else if (oldState.channelID == null || oldState.channelID != newState.channelID) {
     //user joined the channel
     console.log("user " + newState.id + " joined channel " + newState.channelID);
     if (await dbCon.isRegistered(client.channels.cache.get(newState.channelID))) {
@@ -289,6 +334,18 @@ function hasPermission(channel, author) {
     return true;
   }
   return false;
+}
+
+async function getVoiceState(member) {
+  let voiceStates = member.guild.voiceStates.cache;
+  let memberVoice = await voiceStates.find(state => state.id == member.user.id);
+  if (!memberVoice) {
+    return false;
+  }
+  if (memberVoice.channelID == null) {
+    return false;
+  }
+  return memberVoice;
 }
 
 async function getRichPresence(userID) {
