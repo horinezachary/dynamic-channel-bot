@@ -7,7 +7,7 @@ function dbInit() {
     }
     console.log('Connected to the dynChannel SQlite database.');
   });
-  db.run(`CREATE TABLE IF NOT EXISTS channels(channelId VARCHAR(18), guildId VARCHAR(18))`);
+  db.run(`CREATE TABLE IF NOT EXISTS channels(channelId VARCHAR(18), guildId VARCHAR(18), originalName)`);
   db.run(`CREATE TABLE IF NOT EXISTS dynamics(channelId VARCHAR(18), leaderId VARCHAR(18), title)`);
 }
 
@@ -41,7 +41,7 @@ function asyncRun(query, values) {
 async function registerChannel (channel) {
   if (await isRegistered(channel) == false) {
     console.log("CHANNEL: " + channel);
-    await asyncRun(`INSERT INTO channels(channelId,guildId) VALUES(${channel.id},${channel.guild.id})`);
+    await asyncRun(`INSERT INTO channels(channelId,guildId,originalName) VALUES(${channel.id},${channel.guild.id},"${channel.name}")`);
     // get the last insert id
     console.log(`The channel ${channel.id} has been added to the table.`);
     return true;
@@ -52,7 +52,7 @@ async function registerChannel (channel) {
 
 //remove channel from list of watched channels, returns true if success
 async function unregisterChannel (channel) {
-  if (await isRegistered(channel) == true) {
+  if (await isRegistered(channel)) {
     await asyncRun(`DELETE FROM channels WHERE channelId = ${channel.id}`);
     // get the last insert id
     console.log(`The channel ${channel.id} has been removed from the table.`);
@@ -65,11 +65,11 @@ async function unregisterChannel (channel) {
 
 async function getRegistered(guild) {
   let returnedChannels = [];
-  let rows = await asyncQuery(`SELECT channelId as id, guildId as guild FROM channels WHERE guildId = ${guild.id}`);
+  let rows = await asyncQuery(`SELECT channelId as id, guildId as guild, originalName as originalName FROM channels WHERE guildId = ${guild.id}`);
   //console.log(rows);
   for (row of rows) {
     var channel = guild.channels.cache.get(row.id);
-    var channelRow = {"id":row.id, "guild":row.guild, "name":channel.name};
+    var channelRow = {"id":row.id, "guild":row.guild, "originalName":row.originalName, "name":channel.name};
     var len = returnedChannels.push(channelRow);
     //console.log(channelRow);
   }
@@ -81,7 +81,7 @@ async function isRegistered(channel) {
   console.log(registered);
   for (r of registered) {
     if (r.id == channel.id) {
-      return true;
+      return r;
     }
   }
   return false;

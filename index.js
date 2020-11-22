@@ -82,12 +82,14 @@ client.on('message', async message => {
   }
   if (message.content.startsWith(PREFIX + "list") && hasPermission(message.channel, message.author)) {
     var registered = await dbCon.getRegistered(message.channel.guild);
-    var description = "```    NAME   |     CHANNEL       |      GUILD         \n";
+    var description = "```      NAME     | ORIGINAL NAME  |      CHANNEL      \n";
         description +=   "----------------------------------------------------\n";
+                        //12345678901234 | 12345678901234 | 123456789012345678
     for (r of registered) {
-      let space = getOffset(10-r.name.length);
-      console.log(r.name + " | " + r.id + ":" + r.guild + "\n");
-      description += space + r.name + " | " + r.id + ":" + r.guild + "\n";
+      let space = getOffset(14-r.name.length);
+      let originalOffset = getOffset(14-r.originalName.length);
+      console.log(r.name + " | " + r.originalName + " | " + r.id + ":" + r.guild + "\n");
+      description += space + r.name + " | " + originalOffset + r.originalName + " | " + r.id + "\n";
     }
     embed("Registered Channels","FF6600",description+"```",message.channel);
   }
@@ -98,10 +100,6 @@ client.on('message', async message => {
 });
 
 client.on('presenceUpdate', async (oldPresence,newPresence) => {
-  console.log(oldPresence);
-  console.log(newPresence);
-  console.log(oldPresence.activities);
-  console.log(newPresence.activities);
   let same = true;
   if (oldPresence == null || newPresence == null || newPresence == [] || oldPresence == []) {
     //one is null (shouldn't happen)
@@ -178,7 +176,8 @@ client.on('voiceStateUpdate', async (oldState,newState) => {
           //if none, set title and deactivate
           if (game == false) {
             clearChannelState(oldState.channelID);
-            voiceChannel.setName("Dynamic VC");
+            let voiceRegistration = await dbCon.isRegistered(voiceChannel);
+            voiceChannel.setName(voiceRegistration.originalName);
           }
         } else {
           console.log("Not Leader");
@@ -255,7 +254,8 @@ async function reload(channel) {
   //if none, set title and deactivate
   if (game == false) {
     clearChannelState(channel.id);
-    channel.setName("Dynamic VC");
+    let voiceRegistration = await dbCon.isRegistered(channel);
+    channel.setName(voiceRegistration.originalName);
   }
 }
 
