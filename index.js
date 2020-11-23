@@ -266,13 +266,13 @@ client.on('voiceStateUpdate', async (oldState,newState) => {
           if (game != false) {
             console.log("Set " + voiceChannel.name + " to " + game.name);
             setChannelState(voiceChannel.id,game.userID,game.name);
-            voiceChannel.setName(CHANNEL_PREFIX + game.name);
+            setChannelName(voiceChannel,CHANNEL_PREFIX + game.name);
           }
           //if none, set title and deactivate
           if (game == false) {
             clearChannelState(oldState.channelID);
             let voiceRegistration = await dbCon.isRegistered(voiceChannel);
-            voiceChannel.setName(CHANNEL_PREFIX + voiceRegistration.originalName);
+            setChannelName(voiceChannel,CHANNEL_PREFIX + voiceRegistration.originalName);
           }
         } else {
           console.log("Not Leader");
@@ -310,8 +310,7 @@ client.on('voiceStateUpdate', async (oldState,newState) => {
           }
           console.log(latestStartGame.name);
           console.log("Set " + voiceChannel.name + " to " + latestStartGame.name);
-          let result = voiceChannel.setName(CHANNEL_PREFIX + latestStartGame.name);
-          console.log(result);
+          setChannelName(voiceChannel,CHANNEL_PREFIX + latestStartGame.name);
           setChannelState(newState.channelID,newState.id,latestStartGame.name);
         } else {
           console.log("no game to assign");
@@ -332,7 +331,7 @@ async function register(channel) {
     let status = await dbCon.registerChannel(channel);
     let offset = getOffset(24-channel.name.length);
     if (status == true) { //success
-      channel.setName(CHANNEL_PREFIX + channel.name);
+      setChannelName(channel,CHANNEL_PREFIX + channel.name);
       return {"state":SUCCESS,
               "message":"The channel you requested was successfully registered.",
               "innerContent": offset + channel.name + " | " + channel.id};
@@ -354,7 +353,7 @@ async function unregister(channel) {
     let status = await dbCon.unregisterChannel(channel);
     let offset = getOffset(24-channel.name.length);
     if (status == true) { //success
-      channel.setName(voiceRegistration.originalName);
+      setChannelName(channel,voiceRegistration.originalName);
       return {"state":SUCCESS,
               "message":"The channel you requested was successfully unregistered.",
               "innerContent": offset + channel.name + " | " + channel.id};
@@ -388,13 +387,13 @@ async function reload(channel) {
     console.log(channel.id);
     console.log("Set " + channel.name + " to " + game.name);
     setChannelState(channel.id,game.userID,game.name);
-    channel.setName(CHANNEL_PREFIX + game.name);
+    setChannelName(channel,CHANNEL_PREFIX + game.name);
   }
   //if none, set title and deactivate
   if (game == false) {
     clearChannelState(channel.id);
     let voiceRegistration = await dbCon.isRegistered(channel);
-    channel.setName(CHANNEL_PREFIX + voiceRegistration.originalName);
+    setChannelName(channel,CHANNEL_PREFIX + voiceRegistration.originalName);
   }
 }
 
@@ -542,4 +541,13 @@ function getOffset(n) {
     offset += " ";
   }
   return offset;
+}
+
+setChannelName(channel,name) {
+  if(channel.name != name) {
+    //not the same, update
+    channel.setName(name);
+  } else {
+    //no update
+  }
 }
