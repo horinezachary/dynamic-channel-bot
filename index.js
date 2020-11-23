@@ -26,67 +26,63 @@ client.on('ready', () => {
 //add watched channel
 client.on('message', async message => {
   console.log(message.content);
-  if (message.content.startsWith(PREFIX + "register")) {
-    if (hasPermission(message.channel, message.author)) {
-      if(message.content.match(/(?:register\s*)(all)$/)) {
-        //all has been specified, add all channels in guild
-          let channels = message.channel.guild.channels.cache.array();
-          console.log(channels);
-          let successString = "These voice channels were successfully registered: ```";
+  if (message.content.startsWith(PREFIX + "register") && hasPermission(message.channel, message.author)) {
+    if(message.content.match(/(?:register\s*)(all)$/)) {
+      //all has been specified, add all channels in guild
+        let channels = message.channel.guild.channels.cache.array();
+        console.log(channels);
+        let successString = "These voice channels were successfully registered: ```";
+        let alreadyRegisteredString = "These voice channels were already registered: ```";
+        for (c of channels) {
+          var channel = await message.guild.channels.cache.get(c.id);
+          if (channel.type == "voice") {
+            let result = register(channel);
+            if (result.state == SUCCESS) {
+              successString += result.innerContent + "\n";
+            }
+            else if (result.state == ALREADY_REGISTERED){
+              alreadyRegisteredString += result.innerContent + "\n";
+            }
+          }
+        }
+        embed("Server Register","FF6600","The channels in this server (`" + channel.guild.name + "`) are now registered.\n"
+                                            + successString + " ```" + alreadyRegisteredString + " ```",message.channel);
+    } else {
+      var channels = message.content.match(/(?=\s)?([0-9]{18})(?=\s)?/g); //returns array of channel ids in message
+      for (c of channels) {
+        console.log(c);
+        var c = message.guild.channels.cache.get(c);
+        if (c.type == "voice") {
+          let result = await register(channel);
+          console.log(result);
+          embed("Register","FF6600",result.message + "```" + result.innerContent + "```",message.channel);
+        } else if (channel.type == "category"){
+          console.log("category");
+          console.log(channel.children);
+          let successString = "These voice channels in this category were successfully registered: ```";
           let alreadyRegisteredString = "These voice channels were already registered: ```";
-          for (c of channels) {
-            var channel = await message.guild.channels.cache.get(c.id);
-            if (channel.type == "voice") {
-              let result = register(channel);
+          //check and unregister all voice channels in the category
+          for (child of channel.children.array()) {
+            console.log(child.id);
+            if (child.type == "voice") {
+              let result = await register(child);
+              console.log(result);
               if (result.state == SUCCESS) {
                 successString += result.innerContent + "\n";
               }
               else if (result.state == ALREADY_REGISTERED){
                 alreadyRegisteredString += result.innerContent + "\n";
               }
+            } else {
+              //not a voice channel, so ignore it
             }
           }
-          embed("Server Register","FF6600","The channels in this server (`" + channel.guild.name + "`) are now registered.\n"
+          embed("Category Register","FF6600","The channels in the requested category (`" + channel.name + "`) are now registered.\n"
                                               + successString + " ```" + alreadyRegisteredString + " ```",message.channel);
-      } else {
-        var channels = message.content.match(/(?=\s)?([0-9]{18})(?=\s)?/g); //returns array of channel ids in message
-        for (c of channels) {
-          console.log(c);
-          var c = message.guild.channels.cache.get(c);
-          if (c.type == "voice") {
-            let result = await register(channel);
-            console.log(result);
-            embed("Register","FF6600",result.message + "```" + result.innerContent + "```",message.channel);
-          } else if (channel.type == "category"){
-            console.log("category");
-            console.log(channel.children);
-            let successString = "These voice channels in this category were successfully registered: ```";
-            let alreadyRegisteredString = "These voice channels were already registered: ```";
-            //check and unregister all voice channels in the category
-            for (child of channel.children.array()) {
-              console.log(child.id);
-              if (child.type == "voice") {
-                let result = await register(child);
-                console.log(result);
-                if (result.state == SUCCESS) {
-                  successString += result.innerContent + "\n";
-                }
-                else if (result.state == ALREADY_REGISTERED){
-                  alreadyRegisteredString += result.innerContent + "\n";
-                }
-              } else {
-                //not a voice channel, so ignore it
-              }
-            }
-            embed("Category Register","FF6600","The channels in the requested category (`" + channel.name + "`) are now registered.\n"
-                                                + successString + " ```" + alreadyRegisteredString + " ```",message.channel);
-          } else {
-            embed("Register","FF6600","The requested channel (" + channel.name + ":" + channel.id + ") is not a valid voice channel or category.",messageChannel);
-          }
+        } else {
+          embed("Register","FF6600","The requested channel (" + channel.name + ":" + channel.id + ") is not a valid voice channel or category.",messageChannel);
         }
       }
-    } else {
-      //no permission
     }
   }
   if (message.content.startsWith(PREFIX + "help") && hasPermission(message.channel, message.author)) {
@@ -108,67 +104,63 @@ client.on('message', async message => {
       reload(channel);
     }
   }
-  if (message.content.startsWith(PREFIX + "unregister")) {
-    if (hasPermission(message.channel, message.author)) {
-      if(message.content.match(/(?:unregister\s*)(all)$/)) {
-        //all has been specified, remove all channels from guild
-        let channels = message.channel.guild.channels.cache.array();
-        console.log(channels);
-        let successString = "These voice channels were successfully unregistered: ```";
-        let notRegisteredString = "These voice channels were not registered: ```";
-        for (c of channels) {
-          var channel = await message.guild.channels.cache.get(c.id);
-          if (channel.type == "voice") {
-            let result = unregister(channel);
-            if (result.state == SUCCESS) {
-              successString += result.innerContent + "\n";
-            }
-            else if (result.state == NOT_REGISTERED){
-              notRegisteredString += result.innerContent + "\n";
-            }
+  if (message.content.startsWith(PREFIX + "unregister") && hasPermission(message.channel, message.author)) {
+    if(message.content.match(/(?:unregister\s*)(all)$/)) {
+      //all has been specified, remove all channels from guild
+      let channels = message.channel.guild.channels.cache.array();
+      console.log(channels);
+      let successString = "These voice channels were successfully unregistered: ```";
+      let notRegisteredString = "These voice channels were not registered: ```";
+      for (c of channels) {
+        var channel = await message.guild.channels.cache.get(c.id);
+        if (channel.type == "voice") {
+          let result = unregister(channel);
+          if (result.state == SUCCESS) {
+            successString += result.innerContent + "\n";
           }
-        }
-        embed("Server Register","FF6600","The channels in this server (`" + channel.guild.name + "`) are now unregistered.\n"
-                                            + successString + " ```" + notRegisteredString + " ```",message.channel);
-      } else {
-        var channels = message.content.match(/(?=\s)?([0-9]{18})(?=\s)?/g); //returns array of channel ids in message
-        for (c of channels) {
-          var channel = await message.guild.channels.cache.get(c);
-          console.log(channel);
-          if (channel.type == "voice") {
-            let result = await unregister(channel);
-            console.log(result);
-            embed("Unregister","FF6600",result.message + "```" + result.innerContent + "```",message.channel);
-          } else if (channel.type == "category"){
-            console.log("category");
-            console.log(channel.children);
-            let successString = "These voice channels in this category were successfully unregistered: ```";
-            let notRegisteredString = "These voice channels were not registered: ```";
-            //check and unregister all voice channels in the category
-            for (child of channel.children.array()) {
-              console.log(child.id);
-              if (child.type == "voice") {
-                let result = await unregister(child);
-                console.log(result);
-                if (result.state == SUCCESS) {
-                  successString += result.innerContent + "\n";
-                }
-                else if (result.state == NOT_REGISTERED){
-                  notRegisteredString += result.innerContent + "\n";
-                }
-              } else {
-                //not a voice channel, so ignore it
-              }
-            }
-            embed("Category Unregister","FF6600","The channels in the requested category (`" + channel.name + "`) are now unregistered.\n"
-                                                + successString + " ```" + notRegisteredString + " ```",message.channel);
-          } else {
-            embed("Unregister","FF6600","The requested channel (" + channel.name + ":" + channel.id + ") is not a valid voice channel or category.",messageChannel);
+          else if (result.state == NOT_REGISTERED){
+            notRegisteredString += result.innerContent + "\n";
           }
         }
       }
+      embed("Server Register","FF6600","The channels in this server (`" + channel.guild.name + "`) are now unregistered.\n"
+                                          + successString + " ```" + notRegisteredString + " ```",message.channel);
     } else {
-      //no permission
+      var channels = message.content.match(/(?=\s)?([0-9]{18})(?=\s)?/g); //returns array of channel ids in message
+      for (c of channels) {
+        var channel = await message.guild.channels.cache.get(c);
+        console.log(channel);
+        if (channel.type == "voice") {
+          let result = await unregister(channel);
+          console.log(result);
+          embed("Unregister","FF6600",result.message + "```" + result.innerContent + "```",message.channel);
+        } else if (channel.type == "category"){
+          console.log("category");
+          console.log(channel.children);
+          let successString = "These voice channels in this category were successfully unregistered: ```";
+          let notRegisteredString = "These voice channels were not registered: ```";
+          //check and unregister all voice channels in the category
+          for (child of channel.children.array()) {
+            console.log(child.id);
+            if (child.type == "voice") {
+              let result = await unregister(child);
+              console.log(result);
+              if (result.state == SUCCESS) {
+                successString += result.innerContent + "\n";
+              }
+              else if (result.state == NOT_REGISTERED){
+                notRegisteredString += result.innerContent + "\n";
+              }
+            } else {
+              //not a voice channel, so ignore it
+            }
+          }
+          embed("Category Unregister","FF6600","The channels in the requested category (`" + channel.name + "`) are now unregistered.\n"
+                                              + successString + " ```" + notRegisteredString + " ```",message.channel);
+        } else {
+          embed("Unregister","FF6600","The requested channel (" + channel.name + ":" + channel.id + ") is not a valid voice channel or category.",messageChannel);
+        }
+      }
     }
   }
   if (message.content.startsWith(PREFIX + "list") && hasPermission(message.channel, message.author)) {
