@@ -98,7 +98,7 @@ client.on('message', async message => {
            +"\n**NOTE**: channels must be input as id numbers, as voice channels do not have tags.\n"
            +"For more information, check out the [readme](https://github.com/horinezachary/dynamic-channel-bot/blob/master/README.md)",message.channel);
     } else {
-      embed("Dynamic Channels **Help**", "You must have the permission `MANAGE CHANNELS` to edit the settings for this bot.",message.channel);
+      embed("Dynamic Channels **Help**", "FF6600", "You must have the permission `MANAGE CHANNELS` to edit the settings for this bot.",message.channel);
     }
   }
   if (message.content.startsWith(PREFIX + "reload") && hasPermission(message.channel, message.author)) {
