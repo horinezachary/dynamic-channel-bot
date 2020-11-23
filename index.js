@@ -88,13 +88,14 @@ client.on('message', async message => {
   if (message.content.startsWith(PREFIX + "help")) {
     if (hasPermission(message.channel, message.author)) {
       embed("Dynamic Channels **Help**","FF6600","Commands:\n"
-           +"`dvc$register`: This command is used to add a channel to the dynamic channel listing.\n"
-           +"    Example: `dvc$register 123412341234123412`\n"
-           +"`dvc$unregister`: This command is used to remove a channel from the dynamic channel listing.\n"
-           +"    Example: `dvc$unregister 123412341234123412`\n"
-           +"`dvc$list`: This command will list all registered channels in the current guild.\n"
-           +"`dvc$reload`: This command will check, assess and update all currently registered voice channels in the current guild.\n"
-           +"`dvc$help`: This command will return this help text.\n"
+           +"`" + PREFIX + "register`: This command is used to add a channel to the dynamic channel listing.\n"
+           +"    Example: `" + PREFIX + "register 123412341234123412`\n"
+           +"`" + PREFIX + "unregister`: This command is used to remove a channel from the dynamic channel listing.\n"
+           +"    Example: `" + PREFIX + "unregister 123412341234123412`\n"
+           +"`" + PREFIX + "list`: This command will list all registered channels in the current guild.\n"
+           +"`" + PREFIX + "reload`: This command will check, assess and update all currently registered voice channels in the current guild.\n"
+           +"`" + PREFIX + "clean`: This command will remove channel prefixes added by the bot should they get stuck after channel unregister.\n"
+           +"`" + PREFIX + "help`: This command will return this help text.\n"
            +"\n**NOTE**: channels must be input as id numbers, as voice channels do not have tags.\n"
            +"For more information, check out the [readme](https://github.com/horinezachary/dynamic-channel-bot/blob/master/README.md)",message.channel);
     } else {
@@ -187,6 +188,16 @@ client.on('message', async message => {
     }
     description += "└────────────────┴────────────────┴────────────────────┘\n```";
     embed("Registered Channels","FF6600",description,message.channel);
+  }
+  if (message.content.startsWith(PREFIX + "clean") && hasPermission(message.channel, message.author)) {
+    let channels = message.guild.channels.array();
+    for (channel of channels) {
+      if (dbCon.isRegistered(channel) == false) {
+        if (channel.name.startsWith(CHANNEL_PREFIX)) {
+          setChannelName(channel,channel.name.substring(CHANNEL_PREFIX.length));
+        }
+      }
+    }
   }
   if (message.content.startsWith(PREFIX + "close") && message.author.id == OVERLORD_ID) {
     dbCon.close();
