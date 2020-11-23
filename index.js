@@ -3,6 +3,11 @@ const OVERLORD_ID = require('./config.js').OVERLORD_ID;
 const PREFIX = require('./config.js').PREFIX;
 const CHANNEL_PREFIX = require('./config.js').CHANNEL_PREFIX;
 
+const SUCCESS = 100010;
+const NOT_REGISTERED = 100011;
+const NOT_VOICE = 100012;
+const FAILURE = 100012;
+
 console.log("NODE VERSION: " + process.version);
 
 const dbCon = require('./sqlite_lib');
@@ -69,14 +74,46 @@ client.on('message', async message => {
           console.log(channels);
           for (c of channels) {
             var channel = await message.guild.channels.cache.get(c.id);
-            console.log(channel);
-            unregister(channel,message.channel);
+            if (channel.type == "voice") {
+              let result = unregister(channel);
+              embed("Unregister","FF6600",result.message + "```" + result.innerContent + "```",message.channel);
+            }
           }
       } else {
         var channels = message.content.match(/(?=\s)?([0-9]{18})(?=\s)?/g); //returns array of channel ids in message
         for (c of channels) {
           var channel = await message.guild.channels.cache.get(c);
-          unregister(channel,messageChannel);
+          console.log(channel);
+          if (channel.type == "voice") {
+            let result = await unregister(channel);
+            console.log(result);
+            embed("Unregister","FF6600",result.message + "```" + result.innerContent + "```",message.channel);
+          } else if (channel.type == "category"){
+            console.log("category");
+            console.log(channel.children);
+            let successString = "These voice channels in this category were successfully unregistered: ```";
+            let notRegisteredString = "These voice channels were not registered: ```";
+            //check and unregister all voice channels in the category
+            for (child of channel.children.array()) {
+              console.log(child.id);
+              if (child.type == "voice") {
+                let result = await unregister(child,message.channel);
+                console.log(result);
+                if (result.state == SUCCESS) {
+                  successString += result.innerContent + "\n";
+                }
+                else if (result.state == NOT_REGISTERED){
+                  notRegisteredString += result.innerContent + "\n";
+                }
+              } else {
+                //not a voice channel, so ignore it
+              }
+            }
+            embed("Category Unregister","FF6600","The channels in the requested category (`" + channel.name + "`) are now unregistered.\n"
+                                                + successString + " ```" + notRegisteredString + " ```",message.channel);
+          } else {
+            embed("Unregister","FF6600","The requested channel (" + channel.name + ":" + channel.id + ") is not a valid voice channel or category.",messageChannel);
+          }
         }
       }
     } else {
@@ -98,7 +135,6 @@ client.on('message', async message => {
       }
       let offset = getOffset(14-name.length);
       let originalOffset = getOffset(14-r.originalName.length);
-      console.log(offset,originalOffset);
       console.log(name + " | " + r.originalName + " | " + r.id + ":" + r.guild + "\n");
       description += "│ " + name + offset + " │ " + r.originalName + originalOffset + " │ " + r.id + " │\n";
     }
@@ -244,20 +280,25 @@ client.on('voiceStateUpdate', async (oldState,newState) => {
   }
 });
 
-async function unregister(channel,messageChannel) {
+async function unregister(channel) {
   if (channel.type == "voice") {
     let voiceRegistration = await dbCon.isRegistered(channel);
     let status = await dbCon.unregisterChannel(channel);
+    let offset = getOffset(14-channel.name.length);
     if (status == true) { //success
       channel.setName(voiceRegistration.originalName);
-      embed("Unregister","FF6600","The channel you requested was successfully unregistered.\n"
-           +"```" + channel.name + " | " + channel.id + ":" + channel.guild + "```",messageChannel);
+      return {"state":SUCCESS,
+              "message":"The channel you requested was successfully unregistered.",
+              "innerContent": offset + channel.name + " | " + channel.id + ":" + channel.guild};
     } else{ //failure
-      embed("Unregister","FF6600","The channel you requested was not registered."
-           +"```" + channel.name + " | " + channel.id + ":" + channel.guild + "```",messageChannel);
+      return {"state":NOT_REGISTERED,
+              "message":"The channel you requested was not registered.",
+              "innerContent": offset + channel.name + " | " + channel.id + ":" + channel.guild};
     }
   } else {
-    embed("Unregister","FF6600","The requested channel (" + channel.name + ":" + channel.id + ") is not a voice channel.",messageChannel);
+    return {"state":NOT_VOICE,
+            "message":"The requested channel is not a voice channel.",
+            "innerContent": offset + channel.name + " | " + channel.id + ":" + channel.guild};
   }
 }
 
