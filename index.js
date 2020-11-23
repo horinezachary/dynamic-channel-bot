@@ -53,11 +53,13 @@ client.on('message', async message => {
     embed("Dynamic Channels **Help**","FF6600","Commands:\n"
          +"`dvc$register`: This command is used to add a channel to the dynamic channel listing.\n"
          +"    Example: `dvc$register 123412341234123412`\n"
-         +"`dvc$unregister`: This command is used to add a channel to the dynamic channel listing.\n"
+         +"`dvc$unregister`: This command is used to remove a channel from the dynamic channel listing.\n"
          +"    Example: `dvc$unregister 123412341234123412`\n"
          +"`dvc$list`: This command will list all registered channels in the current guild.\n"
+         +"`dvc$reload`: This command will check, assess and update all currently registered voice channels in the current guild.\n"
          +"`dvc$help`: This command will return this help text.\n"
-         +"\n**NOTE**: channels must be input as id numbers, as voice channels do not have tags.",message.channel)
+         +"\n**NOTE**: channels must be input as id numbers, as voice channels do not have tags.\n"
+         +"For more information, check out the [readme](https://github.com/horinezachary/dynamic-channel-bot/blob/master/README.md)",message.channel)
   }
   if (message.content.startsWith(PREFIX + "reload") && hasPermission(message.channel, message.author)) {
     let registeredChannelIDs = await dbCon.getRegistered(message.guild);

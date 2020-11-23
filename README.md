@@ -13,10 +13,12 @@ https://discord.com/oauth2/authorize?client_id=565353374329995296&scope=bot&perm
 ```
 dvc$register 123412341234123412
 ```
-`dvc$unregister:` This command is used to add a channel to the dynamic channel listing. Example:
+`dvc$unregister:` This command is used to remove channels from the dynamic channel listing. Valid arguments are any number of `voice` or `category` ids, or all. If a category id is used, it will remove all voice channels in the category from the registry. If the keyword all is used, all registered voice channels will be unregistered. Example:
 ```
 dvc$unregister 123412341234123412
 ```
+`dvc$reload:` This command will check, assess and update all currently registered voice channels in the current guild.
+
 `dvc$list:` This command will list all registered channels in the current guild.
 
 `dvc$help:` This command will return the help text in the channel it was called.\n"
