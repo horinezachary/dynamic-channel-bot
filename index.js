@@ -190,9 +190,9 @@ client.on('message', async message => {
     embed("Registered Channels","FF6600",description,message.channel);
   }
   if (message.content.startsWith(PREFIX + "clean") && hasPermission(message.channel, message.author)) {
-    let channels = message.guild.channels.array();
+    let channels = message.guild.channels.cache.array();
     for (channel of channels) {
-      if (dbCon.isRegistered(channel) == false) {
+      if (await dbCon.isRegistered(channel) == false) {
         if (channel.name.startsWith(CHANNEL_PREFIX)) {
           setChannelName(channel,channel.name.substring(CHANNEL_PREFIX.length));
         }

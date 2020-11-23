@@ -78,7 +78,6 @@ async function getRegistered(guild) {
 
 async function isRegistered(channel) {
   let registered = await getRegistered(channel.guild);
-  console.log(registered);
   for (r of registered) {
     if (r.id == channel.id) {
       return r;
