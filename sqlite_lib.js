@@ -7,6 +7,7 @@ function dbInit() {
     }
     console.log('Connected to the dynChannel SQlite database.');
   });
+  db.run(`CREATE TABLE IF NOT EXISTS guilds(guildId VARCHAR(18), commandPrefix, channelPrefix)`)
   db.run(`CREATE TABLE IF NOT EXISTS channels(channelId VARCHAR(18), guildId VARCHAR(18), originalName)`);
   db.run(`CREATE TABLE IF NOT EXISTS dynamics(channelId VARCHAR(18), leaderId VARCHAR(18), title)`);
 }
@@ -35,6 +36,51 @@ function asyncRun(query, values) {
       resolve(results);
     });
   });
+}
+
+async function insertGuild(guild, channelPrefix, commandPrefix) {
+  if (getGuild(guildId) == false) {
+    await asyncRun(`INSERT INTO guilds(guildId, channelPrefix, commandPrefix) VALUES(${guildId},"${channelPrefix}","${commandPrefix}")`);
+    return true;
+  } else {
+    return false;
+  }
+}
+
+async function deleteGuild(guildId) {
+  if (getGuild(guildId) == true) {
+    await asyncRun(`DELETE FROM guilds WHERE guildId = ${guildId}`);
+    return true;
+  } else {
+    return false;
+  }
+}
+
+async function setCommandPrefix(guildId, commandPrefix) {
+  if (getGuild(guildId) == true) {
+    await asyncRun(`UPDATE guilds SET commandPrefix = "${commandPrefix}" WHERE guildId = ${channel.id}`);
+    return true;
+  } else {
+    return false;
+  }
+}
+
+async function setChannelPrefix(guildId, channelPrefix) {
+  if (getGuild(guildId) == true) {
+    await asyncRun(`UPDATE guilds SET channelPrefix = "${channelPrefix}" WHERE guildId = ${channel.id}`);
+    return true;
+  } else {
+    return false;
+  }
+}
+
+async function getGuild(guildId) {
+  let rows = await asyncQuery(`SELECT guildId, channelPrefix, commandPrefix FROM guilds WHERE guildId = ${guild.id}`);
+  if (rows.length >= 1) {
+    return rows[0];
+  } else {
+    return false;
+  }
 }
 
 //add channel to list of watched channels, returns true if success
@@ -141,6 +187,21 @@ module.exports = {
   },
   run: function(query, values) {
     return asyncRun(query, values);
+  },
+  insertGuild: function(guildId, channelPrefix, commandPrefix) {
+    return insertGuild(guildId, channelPrefix, commandPrefix);
+  },
+  deleteGuild: function(guildId) {
+    return deleteGuild(guildId);
+  },
+  getGuild: function(guildId) {
+    return getGuild(guildId);
+  },
+  setCommandPrefix: function(guildId, commandPrefix) {
+    return setCommandPrefix(guildId, commandPrefix);
+  },
+  setChannelPrefix: function(guildId, channelPrefix) {
+    return setChannelPrefix(guildId, channelPrefix);
   },
   registerChannel: function(channel) {
     return registerChannel(channel);
