@@ -207,19 +207,26 @@ client.on('message', async message => {
 
 client.on('presenceUpdate', async (oldPresence,newPresence) => {
   let same = true;
-  if (oldPresence == null || newPresence == null || newPresence == [] || oldPresence == []) {
-    //one is null (shouldn't happen)
-    //or one is empty (happens with custom status)
-  }
-  else if (oldPresence.activities.length !== newPresence.activities.length) {
+  let oldActivities;
+  let newActivities;
+  if (!oldPresence || oldPresence == null || oldPresence == []) {
+    //oldPresence is null (shouldn't happen)
+    //or is empty (happens with custom status)
+    oldActivities = [];
+  } else {oldActivities = oldPresence.activities}
+  if (!newPresence || newPresence == null || newPresence == []) {
+    //newPresence is null (shouldn't happen)
+    //or is empty (happens with custom status)
+    newActivities = [];
+  } else {newActivities = newPresence.activities}
+  if (oldActivities.length !== newActivities.length) {
     //different length, there has been a change
     same = false;
   } else {
-    console.log(oldPresence.activities.length);
-    console.log(newPresence.activities.length);
-    for (i = 0; i < (Math.max(oldPresence.activities.length,newPresence.activities.length)); i++) {
-      if (oldPresence.activities[i] && newPresence.activities[i]) {
-        if (oldPresence.activities[i].name == newPresence.activities[i].name) {
+    console.log("# Activities: " + oldActivities.length + "=> " + newActivities.length);
+    for (i = 0; i < (Math.max(oldActivities.length,newActivities.length)); i++) {
+      if (oldActivities[i] && newActivities[i]) {
+        if (oldActivities[i].name == newActivities[i].name) {
           //the two are the same
         } else {
           //not the same
