@@ -2,6 +2,8 @@ const CLIENT_TOKEN = require('./config.js').CLIENT_TOKEN;
 const OVERLORD_ID = require('./config.js').OVERLORD_ID;
 const PREFIX = require('./config.js').PREFIX;
 const CHANNEL_PREFIX = require('./config.js').CHANNEL_PREFIX;
+const DEFAULT_COMMAND_PREFIX = require('./config.js').PREFIX;
+const DEFAULT_CHANNEL_PREFIX = require('./config.js').CHANNEL_PREFIX;
 
 const SUCCESS = 100010;
 const NOT_REGISTERED = 100011;
@@ -51,7 +53,7 @@ client.on('message', async message => {
       var channels = message.content.match(/(?=\s)?([0-9]{18})(?=\s)?/g); //returns array of channel ids in message
       for (c of channels) {
         console.log(c);
-        var c = message.guild.channels.cache.get(c);
+        var c = await message.guild.channels.cache.get(c);
         if (c.type == "voice") {
           let result = await register(channel);
           console.log(result);
