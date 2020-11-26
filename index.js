@@ -4,6 +4,7 @@ const PREFIX = require('./config.js').PREFIX;
 const CHANNEL_PREFIX = require('./config.js').CHANNEL_PREFIX;
 const DEFAULT_COMMAND_PREFIX = require('./config.js').PREFIX;
 const DEFAULT_CHANNEL_PREFIX = require('./config.js').CHANNEL_PREFIX;
+const DEFAULT_EMBED_COLOR = "FF6600";
 
 const SUCCESS = 100010;
 const NOT_REGISTERED = 100011;
@@ -24,6 +25,13 @@ client.on('ready', () => {
   console.log(`Logged in as ${client.user.tag}!`);
   client.user.setActivity(PREFIX,{type:"LISTENING"});
 });
+
+client.on('guildCreate', async guild => {
+  console.log("Added to guild " + guild.name + " (" + guild.id + ")");
+  embed("Welcome",DEFAULT_EMBED_COLOR,"Hello and thanks for adding me to your server! Use the command `"
+       + DEFAULT_COMMAND_PREFIX + "help` for a list of commands, or visit the "
+       +"[readme](https://github.com/horinezachary/dynamic-channel-bot/blob/master/README.md) for more help!",guild.systemChannel);
+}
 
 //add watched channel
 client.on('message', async message => {
@@ -47,49 +55,54 @@ client.on('message', async message => {
             }
           }
         }
-        embed("Server Register","FF6600","The channels in this server (`" + channel.guild.name + "`) are now registered.\n\n"
+        embed("Server Register",DEFAULT_EMBED_COLOR,"The channels in this server (`" + channel.guild.name + "`) are now registered.\n\n"
                                             + successString + " ```" + alreadyRegisteredString + " ```",message.channel);
     } else {
       var channels = message.content.match(/(?=\s)?([0-9]{18})(?=\s)?/g); //returns array of channel ids in message
       for (c of channels) {
         console.log(c);
         var c = await message.guild.channels.cache.get(c);
-        if (c.type == "voice") {
-          let result = await register(channel);
-          console.log(result);
-          embed("Register","FF6600",result.message + "```" + result.innerContent + "```",message.channel);
-        } else if (channel.type == "category"){
-          console.log("category");
-          console.log(channel.children);
-          let successString = "These voice channels in this category were successfully registered: ```";
-          let alreadyRegisteredString = "These voice channels were already registered: ```";
-          //check and unregister all voice channels in the category
-          for (child of channel.children.array()) {
-            console.log(child.id);
-            if (child.type == "voice") {
-              let result = await register(child);
-              console.log(result);
-              if (result.state == SUCCESS) {
-                successString += result.innerContent + "\n";
+        if (!c) { //not channel
+          if (c.type == "voice") {
+            let result = await register(channel);
+            console.log(result);
+            embed("Register",DEFAULT_EMBED_COLOR,result.message + "```" + result.innerContent + "```",message.channel);
+          } else if (channel.type == "category"){
+            console.log("category");
+            console.log(channel.children);
+            let successString = "These voice channels in this category were successfully registered: ```";
+            let alreadyRegisteredString = "These voice channels were already registered: ```";
+            //check and unregister all voice channels in the category
+            for (child of channel.children.array()) {
+              console.log(child.id);
+              if (child.type == "voice") {
+                let result = await register(child);
+                console.log(result);
+                if (result.state == SUCCESS) {
+                  successString += result.innerContent + "\n";
+                }
+                else if (result.state == ALREADY_REGISTERED){
+                  alreadyRegisteredString += result.innerContent + "\n";
+                }
+              } else {
+                //not a voice channel, so ignore it
               }
-              else if (result.state == ALREADY_REGISTERED){
-                alreadyRegisteredString += result.innerContent + "\n";
-              }
-            } else {
-              //not a voice channel, so ignore it
             }
+            embed("Category Register",DEFAULT_EMBED_COLOR,"The channels in the requested category (`" + channel.name + "`) are now registered.\n\n"
+                                                + successString + " ```" + alreadyRegisteredString + " ```",message.channel);
+          } else {
+            embed("Register",DEFAULT_EMBED_COLOR,"The requested channel (" + channel.name + ":" + channel.id + ") is not a valid voice channel or category.",messageChannel);
           }
-          embed("Category Register","FF6600","The channels in the requested category (`" + channel.name + "`) are now registered.\n\n"
-                                              + successString + " ```" + alreadyRegisteredString + " ```",message.channel);
         } else {
-          embed("Register","FF6600","The requested channel (" + channel.name + ":" + channel.id + ") is not a valid voice channel or category.",messageChannel);
+          //not channel
+          embed("Register",DEFAULT_EMBED_COLOR,"The given id is not a valid voice channel or category.",messageChannel);
         }
       }
     }
   }
   if (message.content.startsWith(PREFIX + "help")) {
     if (hasPermission(message.channel, message.author)) {
-      embed("Dynamic Channels **Help**","FF6600","Commands:\n"
+      embed("Dynamic Channels **Help**",DEFAULT_EMBED_COLOR,"Commands:\n"
            +"`" + PREFIX + "register`: This command is used to add a channel to the dynamic channel listing.\n"
            +"    Example: `" + PREFIX + "register 123412341234123412`\n"
            +"`" + PREFIX + "unregister`: This command is used to remove a channel from the dynamic channel listing.\n"
@@ -101,7 +114,7 @@ client.on('message', async message => {
            +"\n**NOTE**: channels must be input as id numbers, as voice channels do not have tags.\n"
            +"For more information, check out the [readme](https://github.com/horinezachary/dynamic-channel-bot/blob/master/README.md)",message.channel);
     } else {
-      embed("Dynamic Channels **Help**", "FF6600", "You must have the permission `MANAGE CHANNELS` to edit the settings for this bot.",message.channel);
+      embed("Dynamic Channels **Help**", DEFAULT_EMBED_COLOR, "You must have the permission `MANAGE CHANNELS` to edit the settings for this bot.",message.channel);
     }
   }
   if (message.content.startsWith(PREFIX + "reload") && hasPermission(message.channel, message.author)) {
@@ -130,7 +143,7 @@ client.on('message', async message => {
           }
         }
       }
-      embed("Server Unregister","FF6600","The channels in this server (`" + channel.guild.name + "`) are now unregistered.\n\n"
+      embed("Server Unregister",DEFAULT_EMBED_COLOR,"The channels in this server (`" + channel.guild.name + "`) are now unregistered.\n\n"
                                           + successString + " ```" + notRegisteredString + " ```",message.channel);
     } else {
       var channels = message.content.match(/(?=\s)?([0-9]{18})(?=\s)?/g); //returns array of channel ids in message
@@ -140,7 +153,7 @@ client.on('message', async message => {
         if (channel.type == "voice") {
           let result = await unregister(channel);
           console.log(result);
-          embed("Unregister","FF6600",result.message + "```" + result.innerContent + "```",message.channel);
+          embed("Unregister",DEFAULT_EMBED_COLOR,result.message + "```" + result.innerContent + "```",message.channel);
         } else if (channel.type == "category"){
           console.log("category");
           console.log(channel.children);
@@ -162,10 +175,10 @@ client.on('message', async message => {
               //not a voice channel, so ignore it
             }
           }
-          embed("Category Unregister","FF6600","The channels in the requested category (`" + channel.name + "`) are now unregistered.\n\n"
+          embed("Category Unregister",DEFAULT_EMBED_COLOR,"The channels in the requested category (`" + channel.name + "`) are now unregistered.\n\n"
                                               + successString + " ```" + notRegisteredString + " ```",message.channel);
         } else {
-          embed("Unregister","FF6600","The requested channel (" + channel.name + ":" + channel.id + ") is not a valid voice channel or category.",messageChannel);
+          embed("Unregister",DEFAULT_EMBED_COLOR,"The requested channel (" + channel.name + ":" + channel.id + ") is not a valid voice channel or category.",messageChannel);
         }
       }
     }
@@ -189,7 +202,7 @@ client.on('message', async message => {
       description += "│ " + name + offset + " │ " + r.originalName + originalOffset + " │ " + r.id + " │\n";
     }
     description += "└────────────────┴────────────────┴────────────────────┘\n```";
-    embed("Registered Channels","FF6600",description,message.channel);
+    embed("Registered Channels",DEFAULT_EMBED_COLOR,description,message.channel);
   }
   if (message.content.startsWith(PREFIX + "clean") && hasPermission(message.channel, message.author)) {
     let channels = message.guild.channels.cache.array();
@@ -200,6 +213,7 @@ client.on('message', async message => {
         }
       }
     }
+    embed("Clean",DEFAULT_EMBED_COLOR,"Channels successfully cleaned.",message.channel);
   }
   if (message.content.startsWith(PREFIX + "close") && message.author.id == OVERLORD_ID) {
     dbCon.close();
